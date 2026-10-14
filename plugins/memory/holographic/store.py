@@ -77,6 +77,7 @@ _HELPFUL_DELTA, _UNHELPFUL_DELTA = 0.05, -0.10
 # Entity extraction patterns, applied in order: capitalized multi-word phrases (with optional
 # hyphens and digits), single capitalized words, ALL-CAPS identifiers, CamelCase identifiers,
 # then double-quoted, single-quoted terms.
+# HOLOGRAPHIC_PATCH_v3: расширенные паттерны (Cyrillic, ALL CAPS, CamelCase, single word)
 _RE_SINGLE_ENTITY = (
     # Title Case with optional hyphens: Hermes-Titan, Khadas-VIM4, Xylophone-42
     re.compile(r'\b([A-ZА-ЯЁ][a-zа-яё]+(?:[-\s][A-ZА-ЯЁ0-9][a-zA-Zа-яёА-ЯЁ0-9]*)+)\b'),

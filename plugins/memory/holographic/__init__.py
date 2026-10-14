@@ -192,12 +192,32 @@ class HolographicMemoryProvider(MemoryProvider):
             self._auto_extract_facts(messages)
 
     def on_memory_write(self, action: str, target: str, content: str) -> None:
-        """Mirror built-in memory writes as facts."""
-        if action == "add" and self._store and content:
-            try:
-                self._store.add_fact(content, category="user_pref" if target == "user" else "general")
-            except Exception as e:
-                logger.debug("Holographic memory_write mirror failed: %s", e)
+        """Mirror built-in memory writes as facts. HOLOGRAPHIC_PATCH_v2.
+
+        Handles add/replace/remove: replace = remove old + add new;
+        remove = delete matching fact. Best-effort, never raises.
+        """
+        if not self._store or not content:
+            return
+        try:
+            cat = "user_pref" if target == "user" else "general"
+            if action == "add":
+                self._store.add_fact(content, category=cat)
+            elif action in ("replace", "remove"):
+                try:
+                    existing = self._store.list_facts(limit=1000)
+                except Exception:
+                    existing = []
+                for f in existing:
+                    if f.get("content") == content:
+                        try:
+                            self._store.remove_fact(int(f["fact_id"]))
+                        except Exception:
+                            pass
+                if action == "replace":
+                    self._store.add_fact(content, category=cat)
+        except Exception as e:
+            logger.debug("Holographic memory_write mirror failed: %s", e)
 
     def shutdown(self) -> None:
         # Close on the caller's thread: leaving the shared connection (+ write lock) to GC keeps it alive on a gateway.

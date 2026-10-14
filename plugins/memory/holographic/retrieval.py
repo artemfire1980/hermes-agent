@@ -72,6 +72,18 @@ class FactRetriever:
         results = sorted(candidates, key=lambda x: x["score"], reverse=True)[:limit]
         for fact in results:
             fact.pop("hrr_vector", None)  # callers expect JSON-serializable dicts
+        # HOLOGRAPHIC_PATCH_v2: increment retrieval_count for ALL returned facts
+        try:
+            ids = [f["fact_id"] for f in results if "fact_id" in f]
+            if ids:
+                ph = ",".join("?" * len(ids))
+                self.store._write(
+                    f"UPDATE facts SET retrieval_count = retrieval_count + 1 "
+                    f"WHERE fact_id IN ({ph})",
+                    ids,
+                )
+        except Exception:
+            pass  # best-effort, never break search
         return results
 
     def _vector_query(self, fallback: str, category: str | None, limit: int, sim_fn: Callable) -> list[dict]:
